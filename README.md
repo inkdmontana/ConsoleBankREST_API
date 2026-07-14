@@ -13,7 +13,7 @@ This project is a REST API for a simple banking system built using Python, Flask
 
 ## Project Structure
 
-```
+
 ConsoleBankAPI/
 │
 ├── Controllers/
@@ -24,7 +24,7 @@ ConsoleBankAPI/
 ├── app.py
 ├── requirements.txt
 └── README.md
-```
+
 
 ## API Endpoints
 
@@ -38,11 +38,7 @@ ConsoleBankAPI/
 
 ## Database
 
-Schema:
-
-```
-cognixia_bank
-```
+Schema: cognixia_bank
 
 Tables:
 
@@ -56,14 +52,11 @@ Tables:
 2. Ensure the `cognixia_bank` schema exists.
 3. Install dependencies:
 
-```
 pip install -r requirements.txt
-```
+
 
 4. Run the application:
 
-```
 python app.py
-```
 
 5. Test the endpoints using Postman.
