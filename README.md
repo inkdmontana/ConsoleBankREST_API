@@ -1,62 +1,74 @@
-# Console Bank REST API
+# Console Bank API
 
 ## Overview
 
-This project is a REST API for a simple banking system built using Python, Flask, and MySQL. The API follows the MVC architecture and provides endpoints for creating accounts, retrieving account information, depositing funds, withdrawing funds, and viewing transaction history.
+This project is a REST API for a simple banking application built with Python and Flask. It follows the MVC architecture using Controllers, Services, Repositories, and Models, and uses MongoDB Atlas for data storage.
 
-## Technologies Used
+## Features
+
+- Create a bank account
+- Retrieve account information
+- Deposit money
+- Withdraw money
+- View transaction history
+- Record deposits and withdrawals
+- RESTful API endpoints
+- JSON request and response handling
+
+## Technologies
 
 - Python 3
 - Flask
-- MySQL
-- mysql-connector-python
+- MongoDB Atlas
+- PyMongo
+- python-dotenv
 
 ## Project Structure
 
-
+```text
 ConsoleBankAPI/
-│
 ├── Controllers/
 ├── Models/
 ├── Repositories/
 ├── Services/
-├── db.py
 ├── app.py
+├── db.py
 ├── requirements.txt
 └── README.md
+```
 
+## Architecture
+
+```text
+Controller Layer
+       ↓
+Service Layer
+       ↓
+Repository Layer
+       ↓
+MongoDB Atlas
+```
 
 ## API Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /accounts/{id} | Retrieve an account |
-| POST | /accounts | Create a new account |
-| POST | /accounts/{id}/deposit | Deposit money |
-| POST | /accounts/{id}/withdraw | Withdraw money |
-| GET | /accounts/{id}/transactions | Retrieve transaction history |
+| Method | Endpoint |
+|--------|----------|
+| GET | /accounts/<account_id> |
+| POST | /accounts |
+| POST | /accounts/<account_id>/deposit |
+| POST | /accounts/<account_id>/withdraw |
+| GET | /accounts/<account_id>/transactions |
 
-## Database
+## Running the Project
 
-Schema: cognixia_bank
+Install dependencies:
 
-Tables:
-
-- users
-- accounts
-- transactions
-
-## Running the Application
-
-1. Start the MySQL server.
-2. Ensure the `cognixia_bank` schema exists.
-3. Install dependencies:
-
+```bash
 pip install -r requirements.txt
+```
 
+Run the application:
 
-4. Run the application:
-
+```bash
 python app.py
-
-5. Test the endpoints using Postman.
+```

@@ -1,117 +1,87 @@
-from db import get_connection
+from datetime import datetime
+from decimal import Decimal
+
+from bson import ObjectId
+from bson.errors import InvalidId
+from pymongo.errors import PyMongoError
+
+from db import get_database
 from Models.Account import Account
 
 
 class AccountRepository:
 
+    def __init__(self):
+        database = get_database()
+
+        if database is None:
+            raise ConnectionError("Could not connect to MongoDB Atlas.")
+
+        self.accounts_collection = database["accounts"]
+
     def find_by_id(self, account_id):
-        connection = get_connection()
-
-        if connection is None:
-            return None
-
-        cursor = None
-
         try:
-            cursor = connection.cursor()
+            document = self.accounts_collection.find_one({
+                "_id": ObjectId(account_id)
+            })
 
-            query = """
-                SELECT account_id, user_id, balance, account_type, created_at
-                FROM accounts
-                WHERE account_id = %s
-            """
-
-            cursor.execute(query, (account_id,))
-            result = cursor.fetchone()
-
-            if result is None:
+            if document is None:
                 return None
 
             return Account(
-                result[0],
-                result[1],
-                result[2],
-                result[3],
-                result[4]
+                account_id=str(document["_id"]),
+                user_id=str(document["user_id"]),
+                balance=Decimal(str(document["balance"])),
+                account_type=document["account_type"],
+                created_at=document.get("created_at")
             )
 
-        except Exception as e:
-            print(f"Error finding account: {e}")
+        except InvalidId:
+            print("Invalid account ID.")
             return None
 
-        finally:
-            if cursor is not None:
-                cursor.close()
-
-            connection.close()
+        except PyMongoError as error:
+            print(f"Error finding account: {error}")
+            return None
 
     def create_account(self, account):
-        connection = get_connection()
-
-        if connection is None:
-            return False
-
-        cursor = None
-
         try:
-            cursor = connection.cursor()
+            document = {
+                "user_id": ObjectId(account.user_id),
+                "balance": float(account.balance),
+                "account_type": account.account_type,
+                "created_at": datetime.now()
+            }
 
-            query = """
-                INSERT INTO accounts (user_id, balance, account_type)
-                VALUES (%s, %s, %s)
-            """
+            result = self.accounts_collection.insert_one(document)
 
-            cursor.execute(query, (
-                account.user_id,
-                account.balance,
-                account.account_type
-            ))
+            return result.inserted_id is not None
 
-            connection.commit()
-            return True
-
-        except Exception as e:
-            print(f"Error creating account: {e}")
+        except InvalidId:
+            print("Invalid user ID.")
             return False
 
-        finally:
-            if cursor is not None:
-                cursor.close()
-
-            connection.close()
+        except PyMongoError as error:
+            print(f"Error creating account: {error}")
+            return False
 
     def update_balance(self, account_id, new_balance):
-        connection = get_connection()
-
-        if connection is None:
-            return False
-
-        cursor = None
-
         try:
-            cursor = connection.cursor()
+            result = self.accounts_collection.update_one(
+                {"_id": ObjectId(account_id)},
+                {
+                    "$set": {
+                        "balance": float(new_balance)
+                    }
+                }
+            )
 
-            query = """
-                UPDATE accounts
-                SET balance = %s
-                WHERE account_id = %s
-            """
+            return result.matched_count > 0
 
-            cursor.execute(query, (
-                new_balance,
-                account_id
-            ))
-
-            connection.commit()
-
-            return cursor.rowcount > 0
-
-        except Exception as e:
-            print(f"Error updating account balance: {e}")
+        except InvalidId:
+            print("Invalid account ID.")
             return False
 
-        finally:
-            if cursor is not None:
-                cursor.close()
-
-            connection.close()
+        except PyMongoError as error:
+            print(f"Error updating account balance: {error}")
+            return False

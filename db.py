@@ -1,22 +1,34 @@
-import mysql.connector
-from mysql.connector import Error
+import os
 
-def get_connection():
-    """Establishes a connection to the MySQL database."""
+from dotenv import load_dotenv
+from pymongo import MongoClient
+from pymongo.errors import PyMongoError
+
+load_dotenv()
+
+MONGODB_URI = os.getenv("MONGODB_URI")
+DATABASE_NAME = os.getenv("MONGODB_DATABASE")
+
+client = None
+database = None
+
+
+def get_database():
+    global client, database
+
+    if database is not None:
+        return database
+
     try:
-        connection = mysql.connector.connect(
-            host='localhost',
-            database='cognixia_bank',
-            user='root',
-            password='abc123'
-        )
-        return connection
-    except Error as e:
-        print(f"Error while connecting to MySQL: {e}")
-        return None
-    
-connection = get_connection()
+        client = MongoClient(MONGODB_URI)
+        client.admin.command("ping")
 
-if connection is not None:
-    print("Connection to MySQL database established successfully.")
-    connection.close()
+        database = client[DATABASE_NAME]
+
+        print("Connected to MongoDB Atlas successfully!")
+
+        return database
+
+    except PyMongoError as e:
+        print(f"MongoDB connection failed: {e}")
+        return None

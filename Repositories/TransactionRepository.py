@@ -1,86 +1,70 @@
-from db import get_connection
+from datetime import datetime
+from decimal import Decimal
+
+from bson import ObjectId
+from bson.errors import InvalidId
+from pymongo.errors import PyMongoError
+
+from db import get_database
 from Models.Transaction import Transaction
 
 
 class TransactionRepository:
+   
+    def __init__(self):
+        database = get_database()
 
-    def create_transaction(self, transaction):
-        connection = get_connection()
+        if database is None:
+            raise ConnectionError("Could not connect to MongoDB Atlas.")
 
-        if connection is None:
-            return False
-
-        cursor = None
-
-        try:
-            cursor = connection.cursor()
-
-            query = """
-                INSERT INTO transactions (account_id, txn_type, amount)
-                VALUES (%s, %s, %s)
-            """
-
-            cursor.execute(query, (
-                transaction.account_id,
-                transaction.txn_type,
-                transaction.amount
-            ))
-
-            connection.commit()
-            return True
-
-        except Exception as e:
-            print(f"Error creating transaction: {e}")
-            return False
-
-        finally:
-            if cursor is not None:
-                cursor.close()
-
-            connection.close()
+        self.transactions_collection = database["transactions"]
 
     def find_by_account_id(self, account_id):
-        connection = get_connection()
-
-        if connection is None:
-            return []
-
-        cursor = None
-
+       
         try:
-            cursor = connection.cursor()
-
-            query = """
-                SELECT txn_id, account_id, txn_type, amount, created_at
-                FROM transactions
-                WHERE account_id = %s
-                ORDER BY created_at DESC
-            """
-
-            cursor.execute(query, (account_id,))
-            results = cursor.fetchall()
-
+            documents = self.transactions_collection.find({
+                "account_id": ObjectId(account_id)
+            }).sort("created_at", -1)
+            
             transactions = []
-
-            for result in results:
+            for document in documents:
                 transaction = Transaction(
-                    result[0],
-                    result[1],
-                    result[2],
-                    result[3],
-                    result[4]
+                    txn_id=str(document["_id"]),
+                    account_id=str(document["account_id"]),
+                    txn_type=document["txn_type"],
+                    amount=Decimal(str(document["amount"])),
+                    created_at=document.get("created_at")
                 )
-
                 transactions.append(transaction)
 
             return transactions
 
-        except Exception as e:
-            print(f"Error finding transactions: {e}")
+        except InvalidId:
+            print("Invalid account ID.")
             return []
 
-        finally:
-            if cursor is not None:
-                cursor.close()
+        except PyMongoError as error:
+            print(f"Error retrieving transactions: {error}")
+            return []
 
-            connection.close()
+    def create_transaction(self, transaction):
+        
+        try:
+            document = {
+                "account_id": ObjectId(transaction.account_id),
+                "txn_type": transaction.txn_type,
+                "amount": float(transaction.amount),
+                "created_at": transaction.created_at or datetime.now()
+            }
+
+            result = self.transactions_collection.insert_one(document)
+
+            return result.inserted_id is not None
+
+        except InvalidId:
+            print("Invalid account ID.")
+            return False
+
+        except PyMongoError as error:
+            print(f"Error creating transaction: {error}")
+            return False

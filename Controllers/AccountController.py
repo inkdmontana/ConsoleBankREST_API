@@ -8,7 +8,7 @@ account_controller = Blueprint("account_controller", __name__)
 service = AccountService()
 
 
-@account_controller.route("/accounts/<int:account_id>", methods=["GET"])
+@account_controller.route("/accounts/<string:account_id>", methods=["GET"])
 def get_account(account_id):
     try:
         account = service.get_account(account_id)
@@ -43,7 +43,10 @@ def create_account():
         return jsonify({"error": str(e)}), 400
 
 
-@account_controller.route("/accounts/<int:account_id>/deposit", methods=["POST"])
+@account_controller.route(
+    "/accounts/<string:account_id>/deposit",
+    methods=["POST"]
+)
 def deposit(account_id):
     try:
         data = request.get_json()
@@ -62,7 +65,10 @@ def deposit(account_id):
         return jsonify({"error": str(e)}), 400
 
 
-@account_controller.route("/accounts/<int:account_id>/withdraw", methods=["POST"])
+@account_controller.route(
+    "/accounts/<string:account_id>/withdraw",
+    methods=["POST"]
+)
 def withdraw(account_id):
     try:
         data = request.get_json()
@@ -81,7 +87,10 @@ def withdraw(account_id):
         return jsonify({"error": str(e)}), 400
 
 
-@account_controller.route("/accounts/<int:account_id>/transactions", methods=["GET"])
+@account_controller.route(
+    "/accounts/<string:account_id>/transactions",
+    methods=["GET"]
+)
 def get_transactions(account_id):
     try:
         transactions = service.get_transactions(account_id)

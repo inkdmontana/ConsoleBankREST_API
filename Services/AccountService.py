@@ -8,13 +8,34 @@ from Repositories.TransactionRepository import TransactionRepository
 
 
 class AccountService:
+    """Service layer for account operations using MongoDB repositories."""
 
-    def __init__(self):
-        self.account_repository = AccountRepository()
-        self.user_repository = UserRepository()
-        self.transaction_repository = TransactionRepository()
+    def __init__(
+        self,
+        account_repository=None,
+        user_repository=None,
+        transaction_repository=None
+    ):
+        self.account_repository = (
+            account_repository
+            if account_repository is not None
+            else AccountRepository()
+        )
+
+        self.user_repository = (
+            user_repository
+            if user_repository is not None
+            else UserRepository()
+        )
+
+        self.transaction_repository = (
+            transaction_repository
+            if transaction_repository is not None
+            else TransactionRepository()
+        )
 
     def create_account(self, user_id, account_type):
+        """Create a new account for a user."""
         user = self.user_repository.find_by_id(user_id)
 
         if user is None:

@@ -1,79 +1,56 @@
-from db import get_connection
+from datetime import datetime
+
+from bson import ObjectId
+from bson.errors import InvalidId
+from pymongo.errors import PyMongoError
+
+from db import get_database
 from Models.User import User
 
+
 class UserRepository:
+    
+
+    def __init__(self):
+        database = get_database()
+
+        if database is None:
+            raise ConnectionError("Could not connect to MongoDB Atlas.")
+
+        self.users_collection = database["users"]
 
     def find_by_id(self, user_id):
-        connection = get_connection()
-
-        if connection is None:
-            return None
-
-        cursor = None
-
+        
         try:
-            cursor = connection.cursor()
+            document = self.users_collection.find_one({"_id": ObjectId(user_id)})
 
-            query = """
-                SELECT user_id, name, email, created_at
-                FROM users
-                WHERE user_id = %s
-            """
-
-            cursor.execute(query, (user_id,))
-            result = cursor.fetchone()
-
-            if result is None:
+            if document is None:
                 return None
 
             return User(
-                result[0],
-                result[1],
-                result[2],
-                result[3]
+                user_id=str(document.get("_id")),
+                name=document.get("name"),
+                email=document.get("email"),
+                created_at=document.get("created_at")
             )
-
-        except Exception as e:
-            print(f"Error finding user: {e}")
+                
+        except (PyMongoError, InvalidId) as error:
+            print(f"Error finding user: {error}")
             return None
 
-        finally:
-            if cursor is not None:
-                cursor.close()
-
-            connection.close()
-
     def create_user(self, user):
-        connection = get_connection()
-
-        if connection is None:
-            return False
-
-        cursor = None
-
+        
         try:
-            cursor = connection.cursor()
+            document = {
+                "name": user.name,
+                "email": user.email,
+                "created_at": user.created_at or datetime.now()
+            }
 
-            query = """
-                INSERT INTO users (name, email)
-                VALUES (%s, %s)
-            """
+            result = self.users_collection.insert_one(document)
 
-            cursor.execute(query, (
-                user.name,
-                user.email
-            ))
+            return result.inserted_id is not None
 
-            connection.commit()
-
-            return True
-
-        except Exception as e:
-            print(f"Error creating user: {e}")
+        except PyMongoError as error:
+            print(f"Error creating user: {error}")
             return False
-
-        finally:
-            if cursor is not None:
-                cursor.close()
-
-            connection.close()
