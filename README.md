@@ -2,26 +2,30 @@
 
 ## Overview
 
-This project is a REST API for a simple banking application built with Python and Flask. It follows the MVC architecture using Controllers, Services, Repositories, and Models, and uses MongoDB Atlas for data storage.
+This project is a REST API for a banking application built with Python, Flask, and MongoDB. It follows an MVC architecture and provides secure user authentication using JWT along with account management and transaction functionality.
 
 ## Features
 
-- Create a bank account
-- Retrieve account information
-- Deposit money
-- Withdraw money
+- User sign up
+- User login
+- Password hashing
+- JWT authentication
+- Create checking or savings account
+- Prevent duplicate account types
+- View user accounts
+- Deposit funds
+- Withdraw funds
 - View transaction history
-- Record deposits and withdrawals
-- RESTful API endpoints
-- JSON request and response handling
+- Protected API endpoints
 
 ## Technologies
 
 - Python 3
 - Flask
-- MongoDB Atlas
+- MongoDB
 - PyMongo
-- python-dotenv
+- Flask-JWT-Extended
+- Werkzeug Security
 
 ## Project Structure
 
@@ -31,8 +35,8 @@ ConsoleBankAPI/
 ├── Models/
 ├── Repositories/
 ├── Services/
-├── app.py
 ├── db.py
+├── app.py
 ├── requirements.txt
 └── README.md
 ```
@@ -40,24 +44,14 @@ ConsoleBankAPI/
 ## Architecture
 
 ```text
-Controller Layer
-       ↓
-Service Layer
-       ↓
-Repository Layer
-       ↓
-MongoDB Atlas
+Controllers
+      ↓
+Services
+      ↓
+Repositories
+      ↓
+MongoDB
 ```
-
-## API Endpoints
-
-| Method | Endpoint |
-|--------|----------|
-| GET | /accounts/<account_id> |
-| POST | /accounts |
-| POST | /accounts/<account_id>/deposit |
-| POST | /accounts/<account_id>/withdraw |
-| GET | /accounts/<account_id>/transactions |
 
 ## Running the Project
 
@@ -72,3 +66,28 @@ Run the application:
 ```bash
 python app.py
 ```
+
+Test the API using Postman.
+
+## API Endpoints
+
+### Authentication
+
+- POST `/signup`
+- POST `/login`
+
+### Accounts
+
+- GET `/accounts`
+- GET `/accounts/{account_id}`
+- POST `/accounts`
+- POST `/accounts/{account_id}/deposit`
+- POST `/accounts/{account_id}/withdraw`
+- GET `/accounts/{account_id}/transactions`
+
+## Security
+
+- Passwords are securely hashed before being stored.
+- JWT authentication protects secured endpoints.
+- Users can only access their own accounts and transactions.
+- Each user is limited to one Checking account and one Savings account.
