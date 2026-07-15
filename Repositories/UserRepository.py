@@ -31,6 +31,7 @@ class UserRepository:
                 user_id=str(document.get("_id")),
                 name=document.get("name"),
                 email=document.get("email"),
+                password_hash=document.get("password_hash"),
                 created_at=document.get("created_at")
             )
                 
@@ -39,18 +40,42 @@ class UserRepository:
             return None
 
     def create_user(self, user):
-        
         try:
             document = {
-                "name": user.name,
-                "email": user.email,
+                "name": user.name.strip(),
+                "email": user.email.strip().lower(),
+                "password_hash": user.password_hash,
                 "created_at": user.created_at or datetime.now()
             }
 
             result = self.users_collection.insert_one(document)
 
-            return result.inserted_id is not None
+            return str(result.inserted_id)
 
         except PyMongoError as error:
             print(f"Error creating user: {error}")
-            return False
+            return None
+
+    def find_by_email(self, email):
+
+        try:
+            normalized_email = email.strip().lower()
+
+            document = self.users_collection.find_one({
+                "email": normalized_email
+            })
+
+            if document is None:
+                return None
+
+            return User(
+                user_id=str(document.get("_id")),
+                name=document.get("name"),
+                email=document.get("email"),
+                password_hash=document.get("password_hash"),
+                created_at=document.get("created_at")
+            )
+
+        except PyMongoError as error:
+            print(f"Error finding user: {error}")
+            return None

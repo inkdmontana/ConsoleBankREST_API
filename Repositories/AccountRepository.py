@@ -44,13 +44,72 @@ class AccountRepository:
             print(f"Error finding account: {error}")
             return None
 
+    def find_by_user_and_type(self, user_id, account_type):
+        try:
+            normalized_type = account_type.strip().title()
+
+            document = self.accounts_collection.find_one({
+                "user_id": ObjectId(user_id),
+                "account_type": normalized_type
+            })
+
+            if document is None:
+                return None
+
+            return Account(
+                account_id=str(document["_id"]),
+                user_id=str(document["user_id"]),
+                balance=Decimal(str(document["balance"])),
+                account_type=document["account_type"],
+                created_at=document.get("created_at")
+            )
+
+        except InvalidId:
+            print("Invalid user ID.")
+            return None
+
+        except PyMongoError as error:
+            print(f"Error finding account by user and type: {error}")
+            return None
+
+    def find_by_user_id(self, user_id):
+        try:
+            documents = self.accounts_collection.find({
+                "user_id": ObjectId(user_id)
+            })
+
+            accounts = []
+
+            for document in documents:
+                accounts.append(
+                    Account(
+                        account_id=str(document["_id"]),
+                        user_id=str(document["user_id"]),
+                        balance=Decimal(str(document["balance"])),
+                        account_type=document["account_type"],
+                        created_at=document.get("created_at")
+                    )
+                )
+
+            return accounts
+
+        except InvalidId:
+            print("Invalid user ID.")
+            return []
+
+        except PyMongoError as error:
+            print(f"Error finding user accounts: {error}")
+            return []
+
     def create_account(self, account):
         try:
+            normalized_type = account.account_type.strip().title()
+
             document = {
                 "user_id": ObjectId(account.user_id),
                 "balance": float(account.balance),
-                "account_type": account.account_type,
-                "created_at": datetime.now()
+                "account_type": normalized_type,
+                "created_at": account.created_at or datetime.now()
             }
 
             result = self.accounts_collection.insert_one(document)

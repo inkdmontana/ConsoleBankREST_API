@@ -35,7 +35,6 @@ class AccountService:
         )
 
     def create_account(self, user_id, account_type):
-        """Create a new account for a user."""
         user = self.user_repository.find_by_id(user_id)
 
         if user is None:
@@ -44,11 +43,30 @@ class AccountService:
         if account_type is None or account_type.strip() == "":
             raise ValueError("Account type is required.")
 
+        normalized_account_type = account_type.strip().title()
+
+        if normalized_account_type not in ["Checking", "Savings"]:
+            raise ValueError(
+                "Account type must be Checking or Savings."
+            )
+
+        existing_account = (
+            self.account_repository.find_by_user_and_type(
+                user_id,
+                normalized_account_type
+            )
+        )
+
+        if existing_account is not None:
+            raise ValueError(
+                f"You already have a {normalized_account_type} account."
+            )
+
         account = Account(
             account_id=None,
             user_id=user_id,
             balance=Decimal("0.00"),
-            account_type=account_type,
+            account_type=normalized_account_type,
             created_at=None
         )
 
@@ -67,16 +85,34 @@ class AccountService:
 
         return account
 
-    def deposit(self, account_id, amount):
-        amount = Decimal(str(amount))
+    def get_account_for_user(self, account_id, user_id):
+        account = self.get_account(account_id)
+
+        if account.user_id != user_id:
+            raise PermissionError(
+                "You do not have access to this account."
+            )
+
+        return account
+
+    def get_accounts_by_user(self, user_id):
+        user = self.user_repository.find_by_id(user_id)
+
+        if user is None:
+            raise ValueError("User does not exist.")
+
+        return self.account_repository.find_by_user_id(user_id)
+
+    def deposit(self, account_id, amount, user_id):
+        account = self.get_account_for_user(account_id, user_id)
+
+        try:
+            amount = Decimal(str(amount))
+        except Exception:
+            raise ValueError("Deposit amount must be a valid number.")
 
         if amount <= 0:
             raise ValueError("Deposit amount must be positive.")
-
-        account = self.account_repository.find_by_id(account_id)
-
-        if account is None:
-            raise ValueError("Account not found.")
 
         new_balance = account.balance + amount
 
@@ -105,16 +141,16 @@ class AccountService:
 
         return new_balance
 
-    def withdraw(self, account_id, amount):
-        amount = Decimal(str(amount))
+    def withdraw(self, account_id, amount, user_id):
+        account = self.get_account_for_user(account_id, user_id)
+
+        try:
+            amount = Decimal(str(amount))
+        except Exception:
+            raise ValueError("Withdrawal amount must be a valid number.")
 
         if amount <= 0:
             raise ValueError("Withdrawal amount must be positive.")
-
-        account = self.account_repository.find_by_id(account_id)
-
-        if account is None:
-            raise ValueError("Account not found.")
 
         if amount > account.balance:
             raise ValueError("Insufficient funds.")
@@ -146,10 +182,9 @@ class AccountService:
 
         return new_balance
 
-    def get_transactions(self, account_id):
-        account = self.account_repository.find_by_id(account_id)
+    def get_transactions(self, account_id, user_id):
+        self.get_account_for_user(account_id, user_id)
 
-        if account is None:
-            raise ValueError("Account not found.")
-
-        return self.transaction_repository.find_by_account_id(account_id)
+        return self.transaction_repository.find_by_account_id(
+            account_id
+        )
