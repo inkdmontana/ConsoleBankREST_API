@@ -17,8 +17,7 @@ CORS(
     app,
     origins=[
         "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "https://main.d13gf6lyjwei0.amplifyapp.com"
+        "http://127.0.0.1:5173"
     ]
 )
 
@@ -31,4 +30,4 @@ app.register_blueprint(auth_controller)
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(debug=True)
